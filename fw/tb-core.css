@@ -1,0 +1,75 @@
+/* Tranquil Bay · shared tokens and primitives for the interactive modules.
+   Claude Design: keep these tokens, restyle freely around them. */
+@import url('tb-fonts.css');
+
+:root{
+  --tb-ink:#1C2321;        /* wet basalt, body text and dark grounds */
+  --tb-ink-2:#3A4441;
+  --tb-paper:#F2EEE6;      /* lime wash, page ground */
+  --tb-paper-2:#E6E0D4;    /* shade on lime wash */
+  --tb-mist:#C7CDC5;       /* monsoon sky, hairlines on dark */
+  --tb-river:#56706B;      /* the still reach, primary colour */
+  --tb-grove:#2E4636;      /* areca canopy, open space */
+  --tb-clay:#A9502F;       /* roof tile, used sparingly for emphasis */
+  --tb-lamp:#D8A657;       /* verandah lamp, interactive highlight */
+  --tb-line:rgba(28,35,33,.16);
+  --tb-line-light:rgba(242,238,230,.28);
+
+  --type-cove:#8FAAA1;     /* sea glass */
+  --type-lagoon:#4E7C74;
+  --type-estuary:#1F4A52;
+  --type-moorings:#A9502F;
+
+  --f-display:'Cormorant Garamond', 'Cormorant', Garamond, 'Times New Roman', serif;
+  --f-ui:'Manrope', 'Segoe UI', system-ui, sans-serif;
+  --f-data:'IBM Plex Mono', ui-monospace, monospace;
+
+  --gutter:clamp(16px, 4vw, 64px);
+  --ease:cubic-bezier(.2,.7,.1,1);
+
+  /* space reserved for the fixed header and fixed disclaimer footer + dock.
+     0 when a module is opened on its own; set by tb-core.js when the brochure chrome is present */
+  --chrome-top:0px;
+  --chrome-bottom:0px;
+}
+html.tb-chrome{--chrome-top:76px;--chrome-bottom:100px}
+@media (max-width:760px){html.tb-chrome{--chrome-top:60px;--chrome-bottom:92px}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--tb-paper);color:var(--tb-ink);font-family:var(--f-ui);font-weight:400;letter-spacing:.005em;font-variant-numeric:lining-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--tb-lamp);outline-offset:3px}
+
+.tb-eyebrow{font-family:var(--f-data);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;opacity:.72}
+.tb-display{font-family:var(--f-display);font-weight:400;line-height:1.02;letter-spacing:.01em}
+/* Cormorant has a small x-height: small display sizes use 500 so they hold up over images */
+.tb-display-sm{font-family:var(--f-display);font-weight:500;letter-spacing:.01em;line-height:1.1}
+.tb-num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.tb-muted{opacity:.66}
+.tb-rule{border:0;border-top:1px solid var(--tb-line);margin:0}
+
+/* chips: text buttons with a hairline underline, not boxes */
+.tb-chips{display:flex;flex-wrap:wrap;gap:6px 18px}
+.tb-chip{background:none;border:0;padding:6px 0;border-bottom:1px solid transparent;font-size:14px;opacity:.7;transition:opacity .2s,border-color .2s}
+.tb-chip:hover{opacity:1}
+.tb-chip[aria-pressed="true"]{opacity:1;border-color:currentColor}
+.tb-chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px}
+
+.tb-btn{display:inline-flex;align-items:center;gap:10px;background:var(--tb-ink);color:var(--tb-paper);border:0;padding:12px 20px;border-radius:999px;font-size:14px;letter-spacing:.01em;transition:background .2s}
+.tb-btn:hover{background:var(--tb-river)}
+.tb-btn.ghost{background:transparent;color:inherit;box-shadow:inset 0 0 0 1px currentColor}
+.tb-btn.ghost:hover{background:rgba(0,0,0,.06)}
+
+.tb-disclaimer{font-family:var(--f-data);font-size:10.5px;letter-spacing:.03em;opacity:.6;line-height:1.6}
+
+/* full-bleed image with a legibility gradient */
+.tb-bleed{position:relative;overflow:hidden;background:var(--tb-ink)}
+.tb-bleed>img,.tb-bleed>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tb-bleed::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,26,24,.72) 0%,rgba(20,26,24,.25) 42%,rgba(20,26,24,0) 70%);pointer-events:none}
+
+/* placeholder for images still to be rendered */
+.tb-pending{position:absolute;inset:0;display:grid;place-items:center;background:
+  radial-gradient(120% 90% at 70% 40%, #6d847e 0%, #3c4f4a 55%, #1f2927 100%);color:var(--tb-paper)}
+.tb-pending span{font-family:var(--f-data);font-size:11px;letter-spacing:.12em;opacity:.8;border-top:1px solid var(--tb-line-light);padding-top:8px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

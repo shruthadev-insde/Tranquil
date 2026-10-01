@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · The Moorings</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  .moor{position:relative;min-height:var(--tb-vh,100vh);display:grid;grid-template-columns:1.35fr 1fr;background:var(--tb-ink);color:var(--tb-paper)}
+  .pics{position:relative;min-height:var(--tb-vh,100vh);overflow:hidden}
+  .pics .slide{position:absolute;inset:0;opacity:0;transition:opacity .8s var(--ease)}
+  .pics .slide.on{opacity:1}
+  .pics .dots{position:absolute;left:var(--gutter);bottom:calc(var(--chrome-bottom) + 28px);display:flex;gap:18px;z-index:2}
+  .pics .dots button{background:none;border:0;color:var(--tb-paper);font-family:var(--f-data);font-size:11px;letter-spacing:.1em;opacity:.6;padding:6px 0;border-bottom:1px solid transparent}
+  .pics .dots button.on{opacity:1;border-color:var(--tb-lamp)}
+  .pics::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,24,22,.6),rgba(18,24,22,0) 30%);pointer-events:none}
+  .side{padding:calc(var(--chrome-top) + clamp(20px,4vh,48px)) var(--gutter) calc(var(--chrome-bottom) + 24px) clamp(24px,3vw,48px);display:flex;flex-direction:column;gap:18px}
+  .side h2{font-size:clamp(52px,6vw,96px);margin:.05em 0 0}
+  .side p{line-height:1.55;opacity:.86;margin:0;max-width:44ch}
+  .modes{display:flex;gap:22px;border-bottom:1px solid var(--tb-line-light)}
+  .modes button{background:none;border:0;color:var(--tb-paper);padding:10px 0;border-bottom:2px solid transparent;opacity:.55;font-size:15px}
+  .modes button[aria-selected="true"]{opacity:1;border-color:var(--tb-lamp)}
+  .diagram{position:relative;aspect-ratio:1/1;max-height:42vh;align-self:flex-start;width:100%}
+  .diagram svg{width:100%;height:100%}
+  .u{stroke:var(--tb-ink);stroke-width:.8;transition:fill .4s,opacity .4s}
+  .court{fill:var(--tb-lamp);opacity:.25;transition:opacity .4s}
+  .ulab{font-family:var(--f-data);font-size:3.6px;letter-spacing:.08em;fill:var(--tb-paper);text-anchor:middle;dominant-baseline:central}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px}
+  .kv .v{font-family:var(--f-data);font-size:20px;display:block}
+  .kv .k{font-size:12px;opacity:.7}
+  .price{font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:34px}
+  ul.uses{margin:0;padding:0;list-style:none;border-top:1px solid var(--tb-line-light)}
+  ul.uses li{padding:9px 0;border-bottom:1px solid var(--tb-line-light);font-size:14px;opacity:.85}
+  @media (max-width:900px){.moor{grid-template-columns:1fr}.pics{min-height:62vh}}
+</style>
+</head>
+<body>
+<section class="moor" data-tb-theme="dark" aria-label="The Moorings courtyard cluster">
+  <div class="pics" id="pics"><div class="dots" id="dots"></div></div>
+  <div class="side">
+    <div class="tb-eyebrow">06 · Block C · Four homes, one court</div>
+    <h2 class="tb-display">The Moorings</h2>
+    <p id="idea"></p>
+    <div class="modes" role="tablist" id="modes"></div>
+    <div class="diagram"><svg id="dg" viewBox="0 0 100 100" role="img" aria-label="Diagram of four homes around a shared court"></svg></div>
+    <p id="modeCopy"></p>
+    <div class="kv" id="kv"></div>
+    <div><div class="tb-eyebrow">Starting from</div><div class="price" id="price"></div>
+      <div class="tb-disclaimer" style="color:var(--tb-paper)">Per home unless stated. Includes each home's share of the court and pavilion. Excl. GST, stamp duty, registration.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="tb-btn" style="background:var(--tb-paper);color:var(--tb-ink)" id="enq">Enquire about The Moorings</button>
+      <button class="tb-btn ghost" id="onmap">Show on masterplan</button>
+    </div>
+    <p class="tb-disclaimer" style="color:var(--tb-paper)" id="status"></p>
+  </div>
+</section>
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el, svg, pts} = TBX; const M = D.moorings;
+  const $ = id => document.getElementById(id);
+  $('idea').textContent = M.idea; $('status').textContent = M.plan_status;
+
+  /* slides */
+  const labels = ['From the lane', 'Into the court', 'Under the tree'];
+  M.renders.forEach((r, i) => {
+    $('pics').insertBefore(el('div', {class: 'slide' + (i === 0 ? ' on' : '')}, TBX.img(r, 'The Moorings, ' + labels[i])), $('dots'));
+    $('dots').append(el('button', {class: i === 0 ? 'on' : '', onclick: () => go(i)}, labels[i]));
+  });
+  let cur = 0, timer;
+  function go(i) { cur = i; document.querySelectorAll('.slide').forEach((s, j) => s.classList.toggle('on', j === i)); $('dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('on', j === i)); clearInterval(timer); timer = setInterval(() => go((cur + 1) % M.renders.length), 6000); }
+  go(0);
+
+  /* diagram built from the four plot polygons, normalised */
+  const polys = M.plots.map(n => D.geometry.plots[n]);
+  const all = polys.flat(); const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  const minX = Math.min(...xs), minY = Math.min(...ys), sc = 84 / Math.max(Math.max(...xs) - minX, Math.max(...ys) - minY);
+  const norm = poly => poly.map(([x, y]) => [8 + (x - minX) * sc, 8 + (y - minY) * sc]);
+  const dg = $('dg'); const g = svg('g', {}); dg.append(g);
+  const center = [8 + ((Math.max(...xs) + minX) / 2 - minX) * sc, 8 + ((Math.max(...ys) + minY) / 2 - minY) * sc];
+  const U = polys.map((p, i) => { const e = svg('polygon', {points: pts(norm(p)), class: 'u'}); g.append(e);
+    const c = norm(p).reduce((a, q) => [a[0] + q[0] / 4, a[1] + q[1] / 4], [0, 0]);
+    // pull label toward outer corner
+    const t = svg('text', {x: c[0] + (c[0] - center[0]) * .15, y: c[1] + (c[1] - center[1]) * .15, class: 'ulab'}); t.textContent = 'HOME ' + (i + 1); g.append(t); return e; });
+  const court = svg('circle', {cx: center[0], cy: center[1], r: 14, class: 'court'}); g.append(court);
+  const tree = svg('circle', {cx: center[0], cy: center[1], r: 5, fill: 'var(--tb-grove)'}); g.append(tree);
+
+  const modes = [
+    {id: 'homes', label: 'Four homes', copy: 'Each home is independent, with its own entrance from the lane, parking and a private court. The four share one larger court and pavilion behind a single gate.',
+      paint: () => { U.forEach((u, i) => u.style.fill = ['#6f8f88', '#4E7C74', '#6f8f88', '#4E7C74'][i]); court.style.opacity = .3; }},
+    {id: 'compound', label: 'One family', copy: 'Buy all four as a family compound. Grandparents on the ground floor of one home, siblings in the others, children in the court. One gate, one address, room for everyone.',
+      paint: () => { U.forEach(u => u.style.fill = 'var(--tb-clay)'); court.style.opacity = .45; }},
+    {id: 'event', label: 'Event day', copy: 'The court and pavilion are set up for gatherings: a service kitchen, power and lighting points, space for long tables under the tree. Weddings, naming ceremonies, reunions.',
+      paint: () => { U.forEach(u => u.style.fill = '#3b4643'); court.style.opacity = .95; }},
+  ];
+  modes.forEach(m => $('modes').append(el('button', {role: 'tab', 'data-id': m.id, onclick: () => setMode(m.id)}, m.label)));
+  function setMode(id) {
+    const m = modes.find(x => x.id === id); m.paint(); $('modeCopy').textContent = m.copy;
+    $('modes').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.id === id));
+    $('price').textContent = id === 'compound' ? TBX.from('moorings_compound').display : TBX.from('moorings').display;
+    $('kv').innerHTML = '';
+    const rows = id === 'compound'
+      ? [[4, 'homes, 12 bedrooms'], [TBX.fmtInt(M.builtup_sqft * 4), 'sq.ft built-up in all'], [TBX.fmtInt(TBX.sqft(M.shared.court_sqm)), 'sq.ft shared court'], [8, 'car bays']]
+      : id === 'event'
+      ? [[TBX.fmtInt(TBX.sqft(M.shared.court_sqm)), 'sq.ft court under the tree'], [TBX.fmtInt(TBX.sqft(M.shared.pavilion_sqm)), 'sq.ft dining pavilion'], ['Service', 'kitchen + event power'], ['Bookable', 'by the four owners']]
+      : [[3, 'bedrooms per home'], [TBX.fmtInt(M.builtup_sqft), 'sq.ft built-up'], [TBX.fmtInt(M.open_areas_sqft), 'sq.ft private court + terraces'], [M.parking, 'car bays per home']];
+    rows.forEach(([v, k]) => $('kv').append(el('div', {}, el('span', {class: 'v'}, v), el('span', {class: 'k'}, k))));
+    TBX.emit('moorings-mode', {mode: id});
+  }
+  setMode('homes');
+  $('enq').onclick = () => TBX.emit('enquire', {type: 'moorings'});
+  $('onmap').onclick = () => TBX.emit('filter-type', {type: 'moorings'});
+})();
+</script>
+</body>
+</html>

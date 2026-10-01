@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · Plan your visit</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  .enq{position:relative;min-height:var(--tb-vh,100vh);display:grid;grid-template-columns:1fr 1fr;background:var(--tb-paper)}
+  .left{position:relative;min-height:var(--tb-vh,100vh);color:var(--tb-paper);overflow:hidden}
+  .left::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(12,16,15,.8),rgba(12,16,15,.1) 60%)}
+  .left .words{position:absolute;left:var(--gutter);right:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(32px,8vh,80px));z-index:2}
+  .left h2{font-size:clamp(52px,6.5vw,104px);margin:0 0 .2em}
+  .left p{max-width:40ch;line-height:1.55;opacity:.88}
+  .right{padding:calc(var(--chrome-top) + clamp(24px,5vh,56px)) var(--gutter) calc(var(--chrome-bottom) + 32px);display:flex;flex-direction:column;gap:26px}
+  .step .tb-eyebrow{margin-bottom:10px;display:block}
+  .pick{display:flex;flex-wrap:wrap;gap:10px}
+  .pick button{background:none;border:1px solid var(--tb-line);border-radius:999px;padding:10px 16px;font-size:14px;display:inline-flex;gap:8px;align-items:center}
+  .pick button[aria-pressed="true"]{background:var(--tb-ink);color:var(--tb-paper);border-color:var(--tb-ink)}
+  .pick i{width:9px;height:9px;border-radius:50%}
+  select,input,textarea{font:inherit;width:100%;padding:12px 0;border:0;border-bottom:1px solid var(--tb-line);background:transparent;color:var(--tb-ink)}
+  textarea{resize:vertical;min-height:60px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .summary{border-top:1px solid var(--tb-ink);padding-top:18px;display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:baseline}
+  .summary .big{font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:38px}
+  .sched{display:flex;height:40px;border-radius:4px;overflow:hidden;margin-top:6px}
+  .sched div{position:relative;background:var(--tb-river);border-right:2px solid var(--tb-paper);color:var(--tb-paper);font-family:var(--f-data);font-size:10.5px;display:flex;align-items:center;justify-content:center}
+  .sched div:nth-child(odd){background:var(--tb-lagoon, #4E7C74)}
+  .sched-lab{display:flex;margin-top:6px}
+  .sched-lab span{font-size:10.5px;opacity:.65;line-height:1.25;padding-right:4px}
+  .ok{display:none;padding:18px;border-left:3px solid var(--tb-lamp);background:rgba(216,166,87,.12)}
+  .ok.on{display:block}
+  @media (max-width:900px){.enq{grid-template-columns:1fr}.left{min-height:52vh}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<section class="enq" data-tb-theme="light" aria-label="Enquire">
+  <div class="left" id="left"><div class="words">
+    <div class="tb-eyebrow">13 · Visit</div>
+    <h2 class="tb-display">Come and stand on the land</h2>
+    <p>Tell us what you are looking for and when you are next flying in. We will meet you at the airport, walk you through the site and show you the plots that suit you.</p>
+  </div></div>
+  <form class="right" id="f" novalidate>
+    <div class="step"><span class="tb-eyebrow">01 · The home you have in mind</span><div class="pick" id="types"></div></div>
+    <div class="step"><span class="tb-eyebrow">02 · Plots you like (optional)</span><div class="pick" id="plots"></div></div>
+    <div class="summary" id="sum"></div>
+    <div class="step"><span class="tb-eyebrow">Indicative payment schedule</span><div class="sched" id="sched"></div><div class="sched-lab" id="schedLab"></div>
+      <p class="tb-disclaimer" id="schedNote"></p></div>
+    <div class="step"><span class="tb-eyebrow">03 · Your details</span>
+      <div class="grid2">
+        <label><span class="tb-eyebrow">Name</span><input name="name" autocomplete="name" required></label>
+        <label><span class="tb-eyebrow">Phone / WhatsApp</span><input name="phone" autocomplete="tel" inputmode="tel" required></label>
+        <label><span class="tb-eyebrow">Email</span><input name="email" type="email" autocomplete="email"></label>
+        <label><span class="tb-eyebrow">Where you live</span><input name="city" placeholder="Bengaluru, Dubai, Mumbai…"></label>
+        <label><span class="tb-eyebrow">Next visit to Mangaluru</span><input name="visit" type="month"></label>
+        <label><span class="tb-eyebrow">Interested in rental management?</span><select name="rental"><option>Not sure yet</option><option>Yes</option><option>No</option></select></label>
+      </div>
+      <label style="display:block;margin-top:14px"><span class="tb-eyebrow">Anything else</span><textarea name="msg"></textarea></label>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="tb-btn" type="submit">Request a site visit</button>
+      <a class="tb-btn ghost" id="wa" target="_blank" rel="noopener">Message on WhatsApp</a>
+      <button class="tb-btn ghost" type="button" id="dl">Download brochure PDF</button>
+    </div>
+    <div class="ok" id="ok">Thank you. The N Developers team will call you within one working day to plan your visit.</div>
+    <p class="tb-disclaimer">Prices are indicative starting figures, excluding GST, stamp duty, registration and maintenance deposit. This brochure is not an offer or a contract. RERA registration details to be added.</p>
+  </form>
+</section>
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el} = TBX; const $ = id => document.getElementById(id);
+  $('left').prepend(TBX.img('Renders/vis_09_rain_verandah_dusk.jpg', ''));
+  const S = {type: 'lagoon', plots: new Set()};
+  /* WhatsApp number: SET BEFORE PUBLISHING */
+  const WA = window.TB_WHATSAPP || '';
+
+  TBX.allTypes().forEach(t => $('types').append(el('button', {type: 'button', 'data-id': t.id, onclick: () => { S.type = t.id; S.plots.forEach(n => { if (!TBX.plot(n).allowed_types.includes(t.id)) S.plots.delete(n); }); render(); }},
+    el('i', {style: {background: TBX.typeColor(t.id)}}), `${t.name} · ${t.bhk} BHK`)));
+  function render() {
+    $('types').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === S.type));
+    $('plots').innerHTML = '';
+    D.plots.filter(p => p.allowed_types.includes(S.type)).forEach(p => $('plots').append(el('button', {type: 'button', 'aria-pressed': S.plots.has(p.no), onclick: () => { S.plots.has(p.no) ? S.plots.delete(p.no) : S.plots.add(p.no); render(); }},
+      `Plot ${p.no} · ${TBX.fmtInt(p.area_sqft)} sq.ft`)));
+    const t = TBX.type(S.type), from = TBX.from(S.type);
+    $('sum').innerHTML = '';
+    $('sum').append(el('div', {}, el('div', {class: 'tb-eyebrow'}, 'Your shortlist'), el('div', {}, `${t.name} · ${t.label}` + (S.plots.size ? ` · Plot${S.plots.size > 1 ? 's' : ''} ${[...S.plots].sort((a, b) => a - b).join(', ')}` : ''))),
+      el('div', {style: {textAlign: 'right'}}, el('div', {class: 'tb-eyebrow'}, 'Starting from'), el('div', {class: 'big'}, from.display.replace(' onwards', ''))));
+    // payment schedule on the starting figure
+    const st = D.payment_plan.stages; $('sched').innerHTML = ''; $('schedLab').innerHTML = '';
+    st.forEach(([name, pct]) => { $('sched').append(el('div', {style: {flex: pct}}, TBX.inr(from.display_inr * pct / 100))); $('schedLab').append(el('span', {style: {flex: pct}}, name.replace(' (within 30 days)', ''))); });
+    $('schedNote').textContent = `${D.payment_plan.status} Shown on the starting figure of ${from.display.replace(' onwards', '')}.`;
+    const txt = encodeURIComponent(`Hello, I'm interested in ${t.name} at Tranquil Bay` + (S.plots.size ? ` (plots ${[...S.plots].join(', ')})` : '') + '.');
+    $('wa').href = WA ? `https://wa.me/${WA}?text=${txt}` : '#';
+    TBX.emit('shortlist', {type: S.type, plots: [...S.plots]});
+  }
+  $('f').addEventListener('submit', e => { e.preventDefault(); const fd = Object.fromEntries(new FormData(e.target));
+    if (!fd.name || !fd.phone) { e.target.querySelector(!fd.name ? '[name=name]' : '[name=phone]').focus(); return; }
+    const payload = {...fd, type: S.type, plots: [...S.plots], at: new Date().toISOString()};
+    TBX.emit('lead', payload);            /* Claude Design: wire this to the form endpoint / CRM */
+    $('ok').classList.add('on'); });
+  $('dl').onclick = () => TBX.emit('download-pdf', {});
+  TBX.on('enquire', d => { if (d.type) S.type = d.type; if (d.plot) S.plots.add(+d.plot); render(); $('f').scrollIntoView({behavior: 'smooth'}); });
+  render();
+})();
+</script>
+</body>
+</html>

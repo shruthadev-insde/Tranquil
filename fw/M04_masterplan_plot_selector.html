@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · Masterplan and plot selector</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  body{overflow:hidden}
+  .mp{position:relative;height:var(--tb-vh,100vh);min-height:620px;background:
+      radial-gradient(90% 80% at 55% 45%, #F2EEE6 0%, #E9E3D7 70%, #DED7C9 100%);}
+  .mp svg{position:absolute;inset:0;width:100%;height:100%}
+  /* layers */
+  .l-boundary{fill:none;stroke:var(--tb-ink);stroke-width:2.2;stroke-dasharray:14 9;opacity:.55}
+  .l-west{fill:none;stroke:var(--tb-ink);stroke-width:1.2;stroke-dasharray:4 8;opacity:.3}
+  .l-road{fill:none;stroke:#D2CCBF;stroke-linecap:round;stroke-linejoin:round}
+  .l-road-c{fill:none;stroke:#fff;stroke-width:1.4;stroke-dasharray:10 12;opacity:.8}
+  .l-os{fill:var(--tb-grove);opacity:.22}
+  .l-lookout{fill:var(--tb-paper-2);stroke:var(--tb-ink);stroke-width:1;stroke-opacity:.25}
+  .l-tower{fill:var(--tb-ink-2);opacity:.85}
+  .plot{stroke:var(--tb-paper);stroke-width:3;cursor:pointer;transition:opacity .25s var(--ease),filter .25s}
+  .plot:hover{filter:brightness(1.12)}
+  .plot.dim{opacity:.18}
+  .plot.sel{stroke:var(--tb-lamp);stroke-width:6}
+  .plot.booked{fill:url(#hatch)!important}
+  .plab{font-family:var(--f-data);font-size:22px;fill:var(--tb-paper);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  .pin circle{fill:var(--tb-ink);stroke:var(--tb-paper);stroke-width:3;transition:r .2s}
+  .pin text{font-family:var(--f-data);font-size:19px;fill:var(--tb-paper);text-anchor:middle;dominant-baseline:central}
+  .pin{cursor:pointer}
+  .pin:hover circle,.pin.hot circle{fill:var(--tb-lamp)}
+  .pin.phase2 circle{fill:var(--tb-paper);stroke:var(--tb-ink);stroke-dasharray:4 3}
+  .pin.phase2 text{fill:var(--tb-ink)}
+  .entry text{font-family:var(--f-data);font-size:16px;letter-spacing:.1em;fill:var(--tb-ink);text-anchor:middle}
+  .hidden-layer{display:none}
+
+  /* overlay UI */
+  .hud{position:absolute;left:var(--gutter);top:calc(var(--chrome-top) + clamp(20px,4vh,48px));max-width:min(560px,80vw);pointer-events:none}
+  .hud *{pointer-events:auto}
+  .hud h1{font-size:clamp(44px,6vw,88px);margin:.15em 0 .2em}
+  .hud p{max-width:40ch;line-height:1.5;margin:0 0 18px;opacity:.8}
+  .layers{position:absolute;left:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(18px,4vh,40px));display:flex;flex-direction:column;gap:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px}
+  .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:8px;vertical-align:-2px}
+  .tip{position:absolute;pointer-events:none;background:var(--tb-ink);color:var(--tb-paper);padding:8px 12px;border-radius:6px;font-size:13px;white-space:nowrap;transform:translate(-50%,-120%);opacity:0;transition:opacity .15s}
+  .tip.on{opacity:1}
+
+  /* plot sheet */
+  .sheet{position:absolute;top:var(--chrome-top);right:0;height:calc(100% - var(--chrome-top) - var(--chrome-bottom));width:min(460px,100%);background:rgba(242,238,230,.94);backdrop-filter:blur(10px);
+         border-left:1px solid var(--tb-line);transform:translateX(102%);transition:transform .45s var(--ease);display:flex;flex-direction:column;overflow:auto}
+  .sheet.open{transform:none}
+  .sheet .hero{position:relative;aspect-ratio:16/9;flex:none}
+  .sheet .body{padding:24px 28px 32px}
+  .sheet .close{position:absolute;top:14px;right:14px;z-index:2;background:rgba(28,35,33,.7);color:var(--tb-paper);border:0;width:36px;height:36px;border-radius:50%}
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin:18px 0 22px}
+  .facts div span{display:block}
+  .facts .v{font-family:var(--f-data);font-size:18px}
+  .choose{display:flex;flex-direction:column;border-top:1px solid var(--tb-line)}
+  .opt{display:grid;grid-template-columns:14px 1fr auto;gap:14px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--tb-line);padding:14px 0}
+  .opt i{width:14px;height:14px;border-radius:50%}
+  .opt b{font-weight:500;font-size:16px}
+  .opt small{display:block;opacity:.65;font-size:12.5px;margin-top:2px}
+  .opt .pr{font-family:var(--f-data);font-size:13px;text-align:right}
+  .opt[aria-pressed="true"] b{text-decoration:underline;text-underline-offset:5px;text-decoration-color:var(--tb-lamp)}
+  .opt:disabled{opacity:.35;cursor:not-allowed}
+  .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  @media (max-width:760px){
+    .sheet{top:auto;bottom:var(--chrome-bottom);height:calc(78vh - var(--chrome-bottom));width:100%;border-left:0;border-top:1px solid var(--tb-line);transform:translateY(102%);border-radius:16px 16px 0 0}
+    .hud h1{font-size:40px}.hud p{display:none}
+    .layers{bottom:calc(var(--chrome-bottom) + 12px)}
+  }
+</style>
+</head>
+<body>
+<section class="mp" data-tb-theme="light" id="mp" aria-label="Interactive masterplan">
+  <svg id="plan" role="img" aria-label="Schematic masterplan of Tranquil Bay with sixteen villa plots">
+    <defs>
+      <pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="10" height="10" fill="#9aa39f"/><line x1="0" y1="0" x2="0" y2="10" stroke="#F2EEE6" stroke-width="3"/>
+      </pattern>
+    </defs>
+    <g id="world"></g>
+  </svg>
+
+  <div class="hud">
+    <div class="tb-eyebrow">04 · Masterplan</div>
+    <h1 class="tb-display">Choose your plot</h1>
+    <p>Sixteen villa plots on 3.13 acres. Tap a plot to see its size and the villa types that fit it.</p>
+    <div class="tb-chips" id="filters" role="group" aria-label="Filter plots by villa type"></div>
+  </div>
+
+  <div class="layers">
+    <div class="legend" id="legend"></div>
+    <div class="tb-chips" id="toggles" role="group" aria-label="Map layers"></div>
+    <div class="tb-disclaimer">Schematic layout based on the sanctioned plan. Not to scale. Final plot boundaries as per survey.</div>
+  </div>
+
+  <div class="tip" id="tip"></div>
+  <aside class="sheet" id="sheet" aria-live="polite"></aside>
+</section>
+
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el, svg, pts} = TBX;
+  const G = D.geometry;
+  const world = document.getElementById('world');
+  const planSvg = document.getElementById('plan');
+  const state = {filter: 'all', sel: null, choice: {}, layers: {amenities: true, openspace: true, lookout: true}};
+
+  /* ---------- draw ---------- */
+  const L = name => { const g = svg('g', {id: 'L-' + name}); world.append(g); return g; };
+  const gWest = L('west'), gLook = L('lookout'), gOS = L('openspace'), gRoads = L('roads'), gB = L('boundary'), gPlots = L('plots'), gLab = L('labels'), gAm = L('amenities'), gEnt = L('entries');
+
+  gWest.append(svg('polyline', {points: pts(G.boundary_west), class: 'l-west'}));
+  gLook.append(svg('polygon', {points: pts(G.lookout_parcel), class: 'l-lookout'}));
+  gLook.append(svg('polygon', {points: pts(G.lookout_tower), class: 'l-tower'}));
+  const lc = G.lookout_tower.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4], [0, 0]);
+  const lookLab = svg('text', {x: lc[0], y: lc[1] + 90, class: 'plab', style: 'fill:var(--tb-ink);font-size:18px;letter-spacing:.12em'}); lookLab.textContent = 'THE LOOKOUT';
+  gLook.append(lookLab);
+  G.open_spaces.forEach(o => gOS.append(svg('polygon', {points: pts(o.pts), class: 'l-os'})));
+  G.roads.forEach(r => {
+    gRoads.append(svg('polyline', {points: pts(r.pts), class: 'l-road', 'stroke-width': r.width * 3.2}));
+    gRoads.append(svg('polyline', {points: pts(r.pts), class: 'l-road-c'}));
+  });
+  gB.append(svg('polygon', {points: pts(G.boundary), class: 'l-boundary'}));
+
+  const plotEls = {};
+  D.plots.forEach(p => {
+    const poly = svg('polygon', {points: pts(G.plots[p.no]), class: 'plot' + (p.status === 'booked' ? ' booked' : ''), tabindex: 0, role: 'button',
+      'aria-label': `Plot ${p.no}, ${p.area_sqm} square metres`, 'data-no': p.no});
+    gPlots.append(poly); plotEls[p.no] = poly;
+    const [x, y] = G.plot_labels[p.no];
+    const t = svg('text', {x, y, class: 'plab', 'data-rot': 1}); t.textContent = p.no; gLab.append(t);
+  });
+  D.amenities.filter(a => !a.service && a.map).forEach((a, i) => {
+    const g = svg('g', {class: 'pin' + (a.phase === 2 ? ' phase2' : ''), transform: `translate(${a.map[0]},${a.map[1]})`, 'data-id': a.id, tabindex: 0});
+    g.append(svg('circle', {r: 24}));
+    const t = svg('text', {'data-rot': 1}); t.textContent = String(i + 1).padStart(2, '0'); g.append(t);
+    const title = svg('title', {}); title.textContent = a.name; g.append(title);
+    g.addEventListener('click', () => TBX.emit('amenity', {id: a.id}));
+    gAm.append(g);
+  });
+  G.entries.forEach(e => {
+    const t = svg('text', {x: e.pt[0], y: e.pt[1] + (e.id === 'main' ? -26 : 40), 'data-rot': 1}); t.textContent = e.label.toUpperCase();
+    const g = svg('g', {class: 'entry'}); g.append(t); gEnt.append(g);
+  });
+
+  /* ---------- colour and filter ---------- */
+  function typeOf(p) { return state.choice[p.no] || p.default_type; }
+  function paint() {
+    D.plots.forEach(p => {
+      const e = plotEls[p.no];
+      e.style.fill = TBX.typeColor(typeOf(p));
+      const match = state.filter === 'all' || p.allowed_types.includes(state.filter);
+      e.classList.toggle('dim', !match);
+      e.classList.toggle('sel', state.sel === p.no);
+    });
+    gAm.classList.toggle('hidden-layer', !state.layers.amenities);
+    gOS.classList.toggle('hidden-layer', !state.layers.openspace);
+    gLook.classList.toggle('hidden-layer', !state.layers.lookout);
+  }
+
+  /* ---------- orientation: rotate to landscape on wide screens ---------- */
+  function orient() {
+    const r = planSvg.getBoundingClientRect();
+    const rot = r.width / r.height > 1.1 ? -72 : 0;
+    const cx = 450, cy = 800;
+    world.setAttribute('transform', `rotate(${rot} ${cx} ${cy})`);
+    world.querySelectorAll('[data-rot]').forEach(t => {
+      const x = +t.getAttribute('x') || 0, y = +t.getAttribute('y') || 0;
+      t.setAttribute('transform', `rotate(${-rot} ${x} ${y})`);
+    });
+    const b = world.getBBox();
+    // bbox of rotated group in user space
+    const m = world.getCTM(), inv = planSvg.getScreenCTM().inverse();
+    const corners = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => {
+      const p = planSvg.createSVGPoint(); p.x = x; p.y = y; return p.matrixTransform(world.getScreenCTM()).matrixTransform(inv);
+    });
+    const xs = corners.map(c => c.x), ys = corners.map(c => c.y);
+    let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = maxX - minX, h = maxY - minY, pad = 0.05;
+    // shift the plan right on wide screens so the HUD has room on the left
+    const shift = rot ? w * 0.30 : 0;
+    planSvg.setAttribute('viewBox', `${minX - w * pad - shift} ${minY - h * pad} ${w * (1 + 2 * pad) + shift} ${h * (1 + 2 * pad)}`);
+  }
+
+  /* ---------- controls ---------- */
+  const filters = document.getElementById('filters');
+  [['all', 'All plots'], ['cove', 'Fits The Cove'], ['lagoon', 'Fits The Lagoon'], ['estuary', 'Fits The Estuary'], ['moorings', 'The Moorings']].forEach(([k, lab]) => {
+    const b = el('button', {class: 'tb-chip', 'aria-pressed': k === 'all', onclick: () => {
+      state.filter = k; filters.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); paint();
+    }}, k !== 'all' ? el('span', {class: 'dot', style: {background: TBX.typeColor(k)}}) : null, lab);
+    filters.append(b);
+  });
+  const legend = document.getElementById('legend');
+  TBX.allTypes().forEach(t => legend.append(el('span', {}, el('i', {style: {background: TBX.typeColor(t.id)}}), `${t.name} · ${t.bhk} BHK`)));
+  legend.append(el('span', {}, el('i', {style: {background: 'var(--tb-grove)', opacity: .35}}), 'Open space'));
+  const toggles = document.getElementById('toggles');
+  [['amenities', 'Amenities'], ['openspace', 'Open spaces'], ['lookout', 'The Lookout']].forEach(([k, lab]) => {
+    const b = el('button', {class: 'tb-chip', 'aria-pressed': true, onclick: () => { state.layers[k] = !state.layers[k]; b.setAttribute('aria-pressed', state.layers[k]); paint(); }}, lab);
+    toggles.append(b);
+  });
+
+  /* ---------- tooltip ---------- */
+  const tip = document.getElementById('tip');
+  gPlots.addEventListener('mousemove', e => {
+    const no = e.target.dataset.no; if (!no) return;
+    const p = TBX.plot(no);
+    tip.textContent = `Plot ${p.no} · ${TBX.fmtInt(p.area_sqft)} sq.ft · ${p.cents} cents`;
+    tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; tip.classList.add('on');
+  });
+  gPlots.addEventListener('mouseleave', () => tip.classList.remove('on'));
+
+  /* ---------- sheet ---------- */
+  const sheet = document.getElementById('sheet');
+  function openPlot(no) {
+    const p = TBX.plot(no); state.sel = p.no; paint();
+    const cur = typeOf(p), t = TBX.type(cur);
+    sheet.innerHTML = '';
+    const hero = el('div', {class: 'hero'}, TBX.img(t.render || t.renders[0], t.name));
+    sheet.append(el('button', {class: 'close', 'aria-label': 'Close', onclick: close}, '✕'), hero);
+    const body = el('div', {class: 'body'},
+      el('div', {class: 'tb-eyebrow'}, `Block ${p.block} · ${p.edge || 'Villa plot'}`),
+      el('h2', {class: 'tb-display', style: {fontSize: '56px', margin: '8px 0 0'}}, `Plot ${p.no}`),
+      el('div', {class: 'facts'},
+        el('div', {}, el('span', {class: 'tb-eyebrow'}, 'Plot area'), el('span', {class: 'v'}, `${TBX.fmtInt(p.area_sqft)} sq.ft`), el('span', {class: 'tb-muted'}, `${p.area_sqm} sq.m`)),
+        el('div', {}, el('span', {class: 'tb-eyebrow'}, 'Cents'), el('span', {class: 'v'}, p.cents)),
+        el('div', {}, el('span', {class: 'tb-eyebrow'}, 'Size'), el('span', {}, p.dims)),
+        el('div', {}, el('span', {class: 'tb-eyebrow'}, 'Status'), el('span', {}, D.meta.status_legend[p.status]))),
+      el('div', {class: 'tb-eyebrow', style: {marginBottom: '6px'}}, p.block === 'C' ? 'Part of The Moorings cluster' : 'Choose a villa for this plot'));
+    const choose = el('div', {class: 'choose'});
+    const opts = p.block === 'C' ? ['moorings'] : ['cove', 'lagoon', 'estuary'];
+    opts.forEach(k => {
+      const ty = TBX.type(k), ok = p.allowed_types.includes(k);
+      const reason = ok ? `${ty.bhk} BHK · ${TBX.fmtInt(ty.builtup_sqft)} sq.ft built-up` : `Needs a plot of ${TBX.fmtInt(TBX.sqft(ty.min_plot_sqm))} sq.ft or more`;
+      choose.append(el('button', {class: 'opt', disabled: !ok, 'aria-pressed': k === cur, onclick: () => { state.choice[p.no] = k; openPlot(p.no); TBX.emit('plot-type', {plot: p.no, type: k}); }},
+        el('i', {style: {background: TBX.typeColor(k)}}), el('span', {}, el('b', {}, ty.name), el('small', {}, reason)),
+        el('span', {class: 'pr'}, ok ? 'from ' + TBX.from(k).display.replace(' onwards', '') : '')));
+    });
+    body.append(choose,
+      el('div', {class: 'ctas'},
+        el('button', {class: 'tb-btn', onclick: () => TBX.emit('compare', {type: cur})}, `See ${t.name} plans`),
+        el('button', {class: 'tb-btn ghost', onclick: () => TBX.emit('enquire', {plot: p.no, type: cur})}, `Enquire about plot ${p.no}`)),
+      el('p', {class: 'tb-disclaimer', style: {marginTop: '18px'}}, 'Prices are indicative starting figures for the type, excluding GST, stamp duty and registration. Final price depends on plot and specification.'));
+    sheet.append(body); sheet.classList.add('open');
+    TBX.emit('plot', {plot: p.no});
+  }
+  function close() { sheet.classList.remove('open'); state.sel = null; paint(); }
+  gPlots.addEventListener('click', e => e.target.dataset.no && openPlot(e.target.dataset.no));
+  gPlots.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.no) { e.preventDefault(); openPlot(e.target.dataset.no); } });
+  document.addEventListener('keydown', e => e.key === 'Escape' && close());
+
+  /* listen for other modules */
+  TBX.on('focus-plot', d => openPlot(d.plot));
+  TBX.on('filter-type', d => filters.querySelectorAll('button')[['all', 'cove', 'lagoon', 'estuary', 'moorings'].indexOf(d.type)]?.click());
+  TBX.on('amenity-hover', d => gAm.querySelectorAll('.pin').forEach(p => p.classList.toggle('hot', p.dataset.id === d.id)));
+
+  paint(); orient(); addEventListener('resize', orient);
+  const q = new URLSearchParams(location.search); if (q.get('plot')) openPlot(q.get('plot')); if (q.get('filter')) TBX.emit('filter-type', {type: q.get('filter')});
+})();
+</script>
+</body>
+</html>

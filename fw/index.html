@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · Module preview</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  /* Preview harness: every module in an iframe, stacked in brochure order, under the fixed header and footer.
+     The final brochure should inline the modules as sections instead (see 03_Claude_Design_Instructions.md). */
+  body{background:var(--tb-ink)}
+  section[data-tb-section]{position:relative;height:100vh;min-height:620px}
+  iframe{display:block;width:100%;height:100%;border:0}
+  .note{position:fixed;top:calc(var(--chrome-top) + 8px);left:50%;transform:translateX(-50%);z-index:40;font-family:var(--f-data);font-size:10px;letter-spacing:.1em;background:rgba(242,238,230,.9);padding:6px 10px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="note">MODULE PREVIEW · NOT THE FINAL LAYOUT</div>
+<section data-tb-section="Tranquil Bay" data-tb-theme="dark"><iframe src="M01_hero_weekend_story.html?part=cover" title="Cover"></iframe></section>
+<section data-tb-section="Builders, designers and vision" data-tb-theme="light" style="height:285vh" data-autosize><iframe src="M00_team_vision.html" title="Builders, designers and vision"></iframe></section>
+<section data-tb-section="A weekend here" data-tb-theme="light" style="height:900vh"><iframe src="M01_hero_weekend_story.html?part=story" title="Why Tranquil Bay and a weekend here" id="wkframe" scrolling="no"></iframe></section>
+<section data-tb-section="Location" data-tb-theme="dark"><iframe src="M02_location_satellite_layers.html" title="Location"></iframe></section>
+<section data-tb-section="The land" data-tb-theme="dark"><iframe src="M03_drone_film_chapters.html" title="Drone film"></iframe></section>
+<section data-tb-section="Masterplan" data-tb-theme="light"><iframe src="M04_masterplan_plot_selector.html" title="Masterplan"></iframe></section>
+<section data-tb-section="The homes" data-tb-theme="dark"><iframe src="M05_villa_explorer_compare.html?view=explore" title="Villa explorer"></iframe></section>
+<section data-tb-section="Compare" data-tb-theme="light" style="height:250vh" data-autosize><iframe src="M05_villa_explorer_compare.html?view=compare" title="Compare the homes"></iframe></section>
+<section data-tb-section="The Moorings" data-tb-theme="dark"><iframe src="M06_moorings_cluster.html" title="The Moorings"></iframe></section>
+<section data-tb-section="Amenities" data-tb-theme="dark"><iframe src="M07_amenities_map.html" title="Amenities"></iframe></section>
+<section data-tb-section="Visit" data-tb-theme="light" style="height:150vh" data-autosize><iframe src="M08_enquire_shortlist.html" title="Enquire"></iframe></section>
+
+<script src="tranquil_bay_data.js"></script>
+<script>window.TB_ASSET_BASE = '../../Web Assets/'; window.TB_CHROME = true;</script>
+<script src="tb-core.js"></script>
+<script src="tb-dock.js" defer></script>
+<script src="tb-chrome.js" defer></script>
+<script>
+  /* relay module events between iframes, and scroll to the module that should respond */
+  const frames = () => [...document.querySelectorAll('iframe')];
+  const target = {'filter-type': 'Masterplan', 'focus-plot': 'Masterplan', compare: 'The homes', enquire: 'Visit', amenity: 'Amenities'};
+  addEventListener('message', e => {
+    if (!e.data || !e.data.tb) return;
+    if (e.data.tb === 'size') { const f = frames().find(f => f.contentWindow === e.source); if (f && f.parentElement.hasAttribute('data-autosize')) f.parentElement.style.height = e.data.detail.h + 'px'; return; }
+    frames().forEach(f => { if (f.contentWindow !== e.source) f.contentWindow.postMessage(e.data, '*'); });
+    const s = target[e.data.tb]; if (s) document.querySelector(`[data-tb-section="${s}"]`).scrollIntoView({behavior: 'smooth'});
+  });
+  /* the weekend story is scroll-driven: drive the iframe's scroll from the page scroll */
+  const wf = document.getElementById('wkframe');
+  addEventListener('scroll', () => { const r = wf.parentElement.getBoundingClientRect(); wf.contentWindow.postMessage({tb: 'scroll-to', detail: {y: Math.max(0, -r.top)}}, '*'); }, {passive: true});
+  wf.style.position = 'sticky'; wf.style.top = '0'; wf.style.height = '100vh';
+  const sendVh = () => frames().forEach(f => f.contentWindow && f.contentWindow.postMessage({tb: 'vh', detail: {h: innerHeight}}, '*'));
+  frames().forEach(f => f.addEventListener('load', sendVh)); addEventListener('resize', sendVh);
+  const _emit = TBX.emit; TBX.emit = (t, d) => { _emit(t, d); frames().forEach(f => f.contentWindow.postMessage({tb: t, detail: d}, '*')); };
+</script>
+</body>
+</html>

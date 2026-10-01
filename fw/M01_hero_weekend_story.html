@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · Land. Unwind. Return.</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  /* ---------- hero ---------- */
+  .hero{position:relative;height:var(--tb-vh,100vh);min-height:600px;color:var(--tb-paper);background:var(--tb-ink);overflow:hidden}
+  .hero video,.hero img.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .hero .shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(12,16,15,.8) 0%,rgba(12,16,15,.15) 45%,rgba(12,16,15,.35) 100%)}
+  .hero .words{position:absolute;left:var(--gutter);right:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(40px,9vh,96px))}
+  .hero h1{font-size:clamp(72px,13vw,220px);margin:0;line-height:.86}
+  .hero .tag{font-family:var(--f-display);letter-spacing:.01em;font-weight:400;font-style:italic;font-size:clamp(26px,3vw,44px);margin:.25em 0 .6em;opacity:.95}
+  .hero .line{max-width:48ch;line-height:1.55;opacity:.85}
+  .hero .cue{position:absolute;right:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(40px,9vh,96px));font-family:var(--f-data);font-size:11px;letter-spacing:.14em;writing-mode:vertical-rl;opacity:.7}
+
+  /* ---------- name story ---------- */
+  .name{background:var(--tb-paper);padding:clamp(80px,14vh,160px) var(--gutter);display:grid;grid-template-columns:1fr 1.2fr;gap:6vw;align-items:end}
+  .name h2{font-size:clamp(48px,6vw,96px);margin:0}
+  .name p{font-size:clamp(18px,1.6vw,23px);line-height:1.55;margin:0;max-width:34em}
+
+  /* ---------- weekend: sticky, scroll-driven ---------- */
+  .weekend{position:relative;height:calc(var(--steps) * var(--tb-vh,100vh) * .8 + var(--tb-vh,100vh));background:var(--tb-paper);color:var(--tb-ink)}
+  .pin{position:sticky;top:0;height:var(--tb-vh,100vh);overflow:hidden}
+  .pin .bg{position:absolute;inset:0;opacity:0;transition:opacity .9s var(--ease)}
+  .pin .bg.on{opacity:1}
+  .pin .shade{position:absolute;inset:0;background:linear-gradient(90deg,var(--tb-paper) 0%,rgba(242,238,230,.92) 26%,rgba(242,238,230,0) 50%);pointer-events:none}
+  .pin .tb-pending{background:radial-gradient(90% 80% at 70% 45%,#e9e2d3 0%,#ddd4c2 60%,#cfc5b1 100%);color:var(--tb-ink)}
+  .pin .tb-pending span{border-color:var(--tb-line)}
+  .pin .wkid{position:absolute;right:var(--gutter);top:calc(var(--chrome-top) + 20px);font-family:var(--f-data);font-size:10.5px;letter-spacing:.12em;opacity:.55}
+  .clock{position:absolute;left:var(--gutter);top:calc(var(--chrome-top) + clamp(24px,6vh,64px))}
+  .clock .t{font-family:var(--f-data);font-size:clamp(56px,8vw,120px);letter-spacing:-.02em;line-height:1}
+  .clock .d{font-family:var(--f-data);font-size:12px;letter-spacing:.14em;opacity:.7;margin-top:6px}
+  .ev{position:absolute;left:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(90px,16vh,160px));max-width:min(560px,86vw);font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:clamp(30px,3.6vw,54px);line-height:1.1;transition:opacity .4s}
+  .rail{position:absolute;left:var(--gutter);right:var(--gutter);bottom:calc(var(--chrome-bottom) + clamp(30px,6vh,56px));display:flex;gap:4px}
+  .rail i{flex:1;height:2px;background:rgba(28,35,33,.18);position:relative}
+  .rail i.done{background:var(--tb-lamp)}
+  .chap{position:absolute;left:var(--gutter);top:calc(var(--chrome-top) + calc(clamp(24px,6vh,64px) + clamp(90px,11vw,160px)));max-width:min(420px,80vw)}
+  .chap b{font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:clamp(34px,4vw,60px);display:block}
+  .chap span{opacity:.8;max-width:34ch;display:inline-block;line-height:1.45}
+  .fine{position:absolute;right:var(--gutter);bottom:calc(var(--chrome-bottom) + 10px)}
+  @media (max-width:760px){.name{grid-template-columns:1fr}.chap span{display:none}
+    .pin .shade{background:linear-gradient(0deg,var(--tb-paper) 0%,rgba(242,238,230,.9) 38%,rgba(242,238,230,0) 62%),linear-gradient(180deg,rgba(242,238,230,.9) 0%,rgba(242,238,230,0) 30%)}}
+</style>
+</head>
+<body>
+<section class="hero" data-tb-theme="dark" aria-label="Tranquil Bay">
+  <img class="poster" id="poster" alt="">
+  <video id="loop" muted autoplay loop playsinline></video>
+  <div class="shade"></div>
+  <div class="words">
+    <div class="tb-eyebrow">Marakada · Mangaluru</div>
+    <h1 class="tb-display">Tranquil Bay</h1>
+    <div class="tag" id="tag"></div>
+    <div class="line" id="line"></div>
+  </div>
+  <div class="cue">SCROLL</div>
+</section>
+
+<section class="name" data-tb-theme="light">
+  <h2 class="tb-display">Why<br>Tranquil Bay</h2>
+  <p id="story"></p>
+</section>
+
+<section class="weekend" id="wk" data-tb-theme="light" aria-label="A weekend at Tranquil Bay">
+  <div class="pin">
+    <div id="bgs"></div>
+    <div class="shade"></div>
+    <div class="clock"><div class="t" id="t"></div><div class="d" id="d"></div></div>
+    <div class="chap" id="chap"><b></b><span></span></div>
+    <div class="ev" id="ev" aria-live="polite"></div>
+    <div class="rail" id="rail"></div>
+    <div class="fine tb-disclaimer" id="fine"></div>
+  </div>
+</section>
+
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el} = TBX; const N = D.narrative;
+  /* ?part=cover shows only the cover; ?part=story shows the name story and the weekend (so the team and vision can sit between them) */
+  const part = new URLSearchParams(location.search).get('part');
+  if (part === 'cover') document.querySelectorAll('.name,.weekend').forEach(e => e.remove());
+  if (part === 'story') document.querySelector('.hero').remove(); const $ = id => document.getElementById(id);
+  if ($('poster')) $('poster').src = TBX.asset(D.drone.stills[1]);
+  if ($('loop')) $('loop').src = TBX.asset(D.drone.hero_loop);
+  if ($('tag')) { $('tag').textContent = N.tagline_primary; $('line').textContent = N.hero_line; }
+  if (!$('wk')) return;
+  $('story').textContent = N.name_story;
+
+  /* each timeline beat gets an image and belongs to a chapter */
+  const beats = N.weekend_timeline.map(([time, text], i) => ({time, text,
+    chapter: N.weekend_illustrations[i].chapter,
+    img: N.weekend_illustrations[i].file, wk: N.weekend_illustrations[i]}));
+  const wk = $('wk'); wk.style.setProperty('--steps', beats.length);
+  beats.forEach((b, i) => { $('bgs').append(el('div', {class: 'bg' + (i === 0 ? ' on' : '')}, TBX.img(b.img, b.wk.subject + ' (illustration)', b.wk.id + ' · illustration pending'))); $('rail').append(el('i')); });
+  $('fine').textContent = N.timeline_disclaimer;
+  let cur = -1;
+  function set(i) {
+    if (i === cur) return; cur = i; const b = beats[i];
+    document.querySelectorAll('#bgs .bg').forEach((e, j) => e.classList.toggle('on', j === i));
+    const [day, hm] = b.time.split(' ');
+    $('t').textContent = hm; $('d').textContent = {Fri: 'FRIDAY', Sat: 'SATURDAY', Sun: 'SUNDAY', Mon: 'MONDAY'}[day];
+    $('ev').style.opacity = 0; setTimeout(() => { $('ev').textContent = b.text; $('ev').style.opacity = 1; }, 200);
+    const ch = N.chapters.find(c => c.id === b.chapter); $('chap').querySelector('b').textContent = ch.title; $('chap').querySelector('span').textContent = ch.line;
+    $('rail').querySelectorAll('i').forEach((r, j) => r.classList.toggle('done', j <= i));
+  }
+  function onScroll() {
+    const r = wk.getBoundingClientRect(), total = wk.offsetHeight - innerHeight;
+    const p = Math.min(1, Math.max(0, -r.top / total));
+    set(Math.min(beats.length - 1, Math.floor(p * beats.length)));
+  }
+  addEventListener('scroll', onScroll, {passive: true}); onScroll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · Location and access</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  .loc{position:relative;height:var(--tb-vh,100vh);min-height:620px;background:#111;color:var(--tb-paper);overflow:hidden}
+  .map{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none}
+  .map .world{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;transition:transform .9s var(--ease)}
+  .map .world.drag{transition:none}
+  .map img{position:absolute;inset:0;width:1920px;height:1080px;filter:grayscale(1) contrast(1.05) brightness(.82)}
+  .map svg{position:absolute;inset:0;width:1920px;height:1080px}
+  .lyr{transition:opacity .45s var(--ease)}
+  .lyr.off{opacity:0;pointer-events:none}
+  /* restyled overlays (original colours kept as data) */
+  #access_primary{stroke:var(--tb-lamp)!important;stroke-opacity:.85!important;stroke-width:22px!important}
+  #access_link{fill:var(--tb-lamp)!important;fill-opacity:.95!important}
+  #site{fill:var(--tb-paper)!important;fill-opacity:.22!important;stroke:var(--tb-paper)!important;stroke-width:2.5px!important}
+  .parcel{fill:var(--tb-clay)!important;fill-opacity:.62!important;stroke:var(--tb-paper)!important;stroke-width:1.5px!important;cursor:pointer;transition:fill-opacity .2s}
+  .parcel:hover,.parcel.hot{fill-opacity:.9!important}
+  .draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 2.4s var(--ease) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .lab{font-family:var(--f-data);font-size:15px;letter-spacing:.08em;fill:var(--tb-paper);paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-width:4px}
+  .lab.big{font-size:20px}
+  .pulse{fill:var(--tb-lamp);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{r:8;opacity:1}100%{r:34;opacity:0}}
+
+  .shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(12,16,15,.86) 0%,rgba(12,16,15,.5) 30%,rgba(12,16,15,0) 55%)}
+  .panel{position:absolute;left:var(--gutter);top:calc(var(--chrome-top) + clamp(24px,6vh,64px));bottom:calc(var(--chrome-bottom) + clamp(24px,5vh,48px));width:min(430px,86vw);display:flex;flex-direction:column;gap:18px}
+  .panel h2{font-size:clamp(48px,6.5vw,96px);margin:.05em 0 0}
+  .panel p{line-height:1.55;opacity:.85;margin:0;max-width:38ch}
+  .layers{display:flex;flex-direction:column;border-top:1px solid var(--tb-line-light)}
+  .layer{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;background:none;border:0;border-bottom:1px solid var(--tb-line-light);color:var(--tb-paper);padding:12px 0;text-align:left}
+  .layer .sw{width:28px;height:10px;border-radius:2px}
+  .layer .st{font-family:var(--f-data);font-size:11px;opacity:.6}
+  .layer[aria-pressed="false"]{opacity:.45}
+  .drive{display:flex;flex-direction:column;gap:0}
+  .drive div{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--tb-line-light);font-size:14px}
+  .drive b{font-family:var(--f-data);font-weight:400;white-space:nowrap}
+  .views{display:flex;gap:18px}
+  .views .tb-chip{color:var(--tb-paper)}
+  .spacer{flex:1}
+  .scale{position:absolute;right:var(--gutter);bottom:calc(var(--chrome-bottom) + 24px);font-family:var(--f-data);font-size:11px;opacity:.7;display:flex;gap:14px;align-items:center}
+  .scale i{display:inline-block;width:60px;height:2px;background:var(--tb-paper);transition:width .9s var(--ease)}
+  .north{position:absolute;right:var(--gutter);top:calc(var(--chrome-top) + 24px);font-family:var(--f-data);font-size:12px;text-align:center;opacity:.8}
+  .credit{position:absolute;right:var(--gutter);bottom:calc(var(--chrome-bottom) + 8px);font-size:10px;opacity:.45;font-family:var(--f-data)}
+  @media (max-width:760px){.panel{top:auto;bottom:var(--chrome-bottom);left:0;right:0;width:auto;padding:18px 16px 20px;background:linear-gradient(0deg,rgba(12,16,15,.95) 70%,rgba(12,16,15,0));gap:10px}
+    .panel h2{font-size:40px}.panel p,.drive{display:none}.shade{display:none}}
+</style>
+</head>
+<body>
+<section class="loc" data-tb-theme="dark" aria-label="Location and access">
+  <div class="map" id="map"><div class="world" id="world">
+    <img id="base" alt="Satellite view of the Tranquil Bay site and its surroundings">
+    <svg id="ov" viewBox="0 0 1920 1080"></svg>
+  </div></div>
+  <div class="shade"></div>
+  <div class="north">▲<br>N</div>
+  <div class="panel">
+    <div class="tb-eyebrow">02 · Location</div>
+    <h2 class="tb-display">Minutes from arrivals</h2>
+    <p>Tranquil Bay sits on the quiet side of Kavoor, off Airport Road, with the Phalguni's still reach just to the north. Close enough to the terminal to land and be home before dark, far enough to hear the rain.</p>
+    <div class="views tb-chips" id="views"></div>
+    <div class="layers" id="layers"></div>
+    <div class="spacer"></div>
+    <div class="drive" id="drive"></div>
+    <div class="tb-disclaimer" style="color:var(--tb-paper)" id="disc"></div>
+  </div>
+  <div class="scale"><i></i><span>100 m</span></div>
+  <div class="credit">Imagery © Google Earth / Airbus 2026</div>
+</section>
+
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el, svg} = TBX;
+  const S = D.satellite;
+  document.getElementById('base').src = TBX.asset(S.base);
+  const ov = document.getElementById('ov');
+  const groups = {access: svg('g', {class: 'lyr', id: 'g-access'}), site: svg('g', {class: 'lyr', id: 'g-site'}), parcels: svg('g', {class: 'lyr', id: 'g-parcels'}), labels: svg('g', {class: 'lyr', id: 'g-labels'})};
+  Object.values(groups).forEach(g => ov.append(g));
+
+  S.paths.forEach(p => {
+    const node = svg('path', {d: p.d, style: p.style, id: p.id});
+    if (p.id.startsWith('access')) groups.access.append(node);
+    else if (p.id === 'site') groups.site.append(node);
+    else { node.classList.add('parcel'); node.dataset.label = p.label; groups.parcels.append(node);
+      const t = svg('title', {}); t.textContent = p.label; node.append(t);
+      node.addEventListener('click', () => TBX.emit('parcel', {id: p.id})); }
+  });
+  // animate the arterial line drawing in
+  const prim = document.getElementById('access_primary');
+  const len = prim.getTotalLength(); prim.style.setProperty('--len', len); prim.classList.add('draw');
+
+  S.labels.forEach(l => { const t = svg('text', {x: l.pt[0], y: l.pt[1], class: 'lab' + (l.text === 'Main entry' ? '' : ' big')}); t.textContent = l.text + (l.arrow === 'ne' ? '  ↗' : l.arrow === 'sw' ? '  ↙' : ''); groups.labels.append(t); });
+  const pin = svg('g', {transform: 'translate(1162,378)'}); pin.append(svg('circle', {r: 8, class: 'pulse'}), svg('circle', {r: 6, fill: 'var(--tb-lamp)'})); groups.labels.append(pin);
+  const siteLab = svg('text', {x: 1345, y: 700, class: 'lab big', style: 'font-size:26px'}); siteLab.textContent = 'TRANQUIL BAY'; groups.labels.append(siteLab);
+  const plabs = svg('g', {id: 'plabs', style: 'opacity:0;transition:opacity .5s'}); groups.labels.append(plabs);
+  const short = {parcel_lookout: 'THE LOOKOUT', parcel_d: 'BLOCK D', parcel_c: 'THE MOORINGS', parcel_a: 'BLOCK A', parcel_b: 'BLOCK B'};
+  groups.parcels.querySelectorAll('.parcel').forEach(p => { const b = p.getBBox(); const t = svg('text', {x: b.x + b.width / 2, y: b.y + b.height / 2, class: 'lab', 'text-anchor': 'middle', style: 'font-size:8px;stroke-width:2px'}); t.textContent = short[p.id]; plabs.append(t); });
+
+  const layerDefs = [
+    ['access', 'Access roads', 'var(--tb-lamp)', 'Airport Road and the link to the gate'],
+    ['site', 'Site boundary', 'var(--tb-paper)', '3.13 acres'],
+    ['parcels', 'Development parcels', 'var(--tb-clay)', 'Villa blocks A to D and The Lookout'],
+    ['labels', 'Labels and directions', 'transparent', ''],
+  ];
+  const lbox = document.getElementById('layers');
+  layerDefs.forEach(([k, lab, c, st]) => {
+    const b = el('button', {class: 'layer', 'aria-pressed': true, onclick: () => { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); groups[k].classList.toggle('off', !on); }},
+      el('span', {class: 'sw', style: {background: c, border: c === 'transparent' ? '1px solid var(--tb-line-light)' : 0}}), el('span', {}, lab), el('span', {class: 'st'}, st));
+    lbox.append(b);
+  });
+
+  /* camera presets (pan/zoom within the 1920x1080 frame) */
+  const world = document.getElementById('world'), map = document.getElementById('map');
+  const cam = {x: 0, y: 0, k: 1};
+  const presets = {region: {cx: 960, cy: 540, k: 1}, approach: {cx: 900, cy: 500, k: 1.2}, site: {cx: 1210, cy: 560, k: 2.6}};
+  function applyCam() { world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.k})`; document.querySelector('.scale i').style.width = (170 * cam.k) + 'px'; }
+  function goto(name) {
+    const r = map.getBoundingClientRect(), p = presets[name];
+    const base = Math.max(r.width / 1920, r.height / 1080); cam.k = base * p.k;
+    const offset = r.width > 760 ? r.width * 0.16 : 0;           // keep target clear of the text panel
+    cam.x = r.width / 2 + offset - p.cx * cam.k; cam.y = r.height / 2 - p.cy * cam.k; clamp(); applyCam();
+    document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === name));
+    document.getElementById('plabs').style.opacity = name === 'site' ? 1 : 0; siteLab.style.opacity = name === 'site' ? 0 : 1;
+  }
+  function clamp() { const r = map.getBoundingClientRect(); cam.x = Math.min(0, Math.max(r.width - 1920 * cam.k, cam.x)); cam.y = Math.min(0, Math.max(r.height - 1080 * cam.k, cam.y)); }
+  const vbox = document.getElementById('views');
+  [['region', 'Region'], ['approach', 'The approach'], ['site', 'The site']].forEach(([k, l]) => vbox.append(el('button', {class: 'tb-chip', 'data-v': k, onclick: () => goto(k)}, l)));
+  // drag + wheel
+  let drag = null;
+  map.addEventListener('pointerdown', e => { drag = [e.clientX - cam.x, e.clientY - cam.y]; world.classList.add('drag'); map.setPointerCapture(e.pointerId); });
+  map.addEventListener('pointermove', e => { if (!drag) return; cam.x = e.clientX - drag[0]; cam.y = e.clientY - drag[1]; clamp(); applyCam(); });
+  map.addEventListener('pointerup', () => { drag = null; world.classList.remove('drag'); });
+  map.addEventListener('wheel', e => { e.preventDefault(); const r = map.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const base = Math.max(r.width / 1920, r.height / 1080), nk = Math.max(base, Math.min(base * 4, cam.k * (e.deltaY < 0 ? 1.12 : 0.9)));
+    cam.x = mx - (mx - cam.x) * nk / cam.k; cam.y = my - (my - cam.y) * nk / cam.k; cam.k = nk; world.classList.add('drag'); clamp(); applyCam(); setTimeout(() => world.classList.remove('drag'), 50); }, {passive: false});
+
+  const drive = document.getElementById('drive');
+  D.context.places.slice(0, 5).forEach(p => drive.append(el('div', {}, el('span', {}, p.name.replace(' (IXE), Bajpe', '')), el('b', {}, p.approx_drive))));
+  document.getElementById('disc').textContent = D.context.disclaimer;
+
+  addEventListener('resize', () => goto(document.querySelector('#views [aria-pressed="true"]')?.dataset.v || 'approach'));
+  goto(new URLSearchParams(location.search).get('view') || 'approach');
+  TBX.on('location-view', d => goto(d.view));
+})();
+</script>
+</body>
+</html>

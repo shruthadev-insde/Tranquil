@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tranquil Bay · The builders, the designers and the vision</title>
+<link rel="stylesheet" href="tb-core.css">
+<style>
+  /* ---------- the two partners ---------- */
+  .team{background:var(--tb-paper);padding:calc(var(--chrome-top) + clamp(48px,9vh,110px)) var(--gutter) clamp(56px,10vh,120px)}
+  .team .intro{max-width:760px;margin-bottom:clamp(40px,8vh,96px)}
+  .team .intro h2{font-size:clamp(48px,6.5vw,104px);margin:.1em 0 .25em}
+  .team .intro p{font-size:clamp(17px,1.4vw,20px);line-height:1.55;opacity:.8;margin:0}
+  .partner{display:grid;grid-template-columns:minmax(200px,.8fr) 1.6fr;gap:clamp(24px,5vw,80px);padding:clamp(28px,5vh,56px) 0;border-top:1px solid var(--tb-ink)}
+  .partner .mark{display:flex;flex-direction:column;gap:18px}
+  .partner .mark img{width:auto;max-width:100%;object-fit:contain;object-position:left center;align-self:flex-start}
+  .partner .mark .n{height:clamp(110px,12vw,170px);aspect-ratio:1/1}
+  .partner .mark .i{height:clamp(44px,4.6vw,66px);aspect-ratio:3.1/1}
+  .partner .role{font-family:var(--f-data);font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+  .partner h3{font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:clamp(34px,3.6vw,56px);line-height:1;margin:0 0 18px}
+  .partner p{font-size:17px;line-height:1.6;margin:0 0 22px;max-width:62ch}
+  .facts{display:flex;flex-wrap:wrap;gap:0 34px}
+  .facts span{font-family:var(--f-data);font-size:12.5px;padding:10px 0;border-top:1px solid var(--tb-line)}
+  .people{display:flex;gap:34px;margin-top:6px;font-size:14px}
+  .people b{font-weight:500;display:block}
+  .people small{opacity:.65}
+  .partner a.more{font-size:13px;color:var(--tb-river);text-underline-offset:4px}
+
+  /* ---------- the vision ---------- */
+  .vision{position:relative;min-height:var(--tb-vh,100vh);color:var(--tb-paper);display:flex;align-items:flex-end;overflow:hidden}
+  .vision .bg{position:absolute;inset:0}
+  .vision::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(12,16,15,.92) 0%,rgba(12,16,15,.6) 45%,rgba(12,16,15,.15) 100%);pointer-events:none}
+  .vision .in{position:relative;z-index:2;padding:calc(var(--chrome-top) + 60px) var(--gutter) calc(var(--chrome-bottom) + clamp(32px,6vh,72px));width:100%}
+  .vision h2{font-size:clamp(46px,6vw,100px);max-width:15ch;margin:.12em 0 .3em}
+  .vision .st{font-size:clamp(17px,1.4vw,21px);line-height:1.6;max-width:62ch;opacity:.9;margin:0 0 clamp(28px,6vh,64px)}
+  .principles{display:grid;grid-template-columns:repeat(4,1fr);gap:0 clamp(16px,2.5vw,40px)}
+  .principles div{border-top:1px solid var(--tb-line-light);padding-top:16px}
+  .principles small{font-family:var(--f-data);font-size:11px;letter-spacing:.12em;opacity:.7}
+  .principles b{display:block;font-family:var(--f-display);letter-spacing:.01em;font-weight:500;font-size:clamp(24px,2.2vw,32px);margin:6px 0 8px}
+  .principles span{font-size:14.5px;line-height:1.5;opacity:.85}
+  @media (max-width:900px){.partner{grid-template-columns:1fr}.principles{grid-template-columns:1fr 1fr;gap:22px 18px}}
+  @media (max-width:520px){.principles{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<section class="team" data-tb-theme="light" aria-label="Developer and design consultancy">
+  <div class="intro">
+    <div class="tb-eyebrow">01 · Who is building Tranquil Bay</div>
+    <h2 class="tb-display">The builders and the designers</h2>
+    <p>A Mangaluru developer who has spent years on the buyer's side of the table, and a design practice from Bantwal that starts every project with a question.</p>
+  </div>
+  <div id="partners"></div>
+</section>
+
+<section class="vision" data-tb-theme="dark" aria-label="Vision">
+  <div class="bg" id="vbg"></div>
+  <div class="in">
+    <div class="tb-eyebrow">02 · The vision</div>
+    <h2 class="tb-display" id="vh"></h2>
+    <p class="st" id="vs"></p>
+    <div class="principles" id="vp"></div>
+  </div>
+</section>
+
+<script src="tranquil_bay_data.js"></script>
+<script src="tb-core.js"></script>
+<script>
+(() => {
+  const {data: D, el} = TBX; const $ = id => document.getElementById(id);
+  const T = D.team;
+  const card = (p, cls) => el('article', {class: 'partner'},
+    el('div', {class: 'mark'}, el('span', {class: 'role'}, p.role), el('img', {class: cls, src: TBX.asset(p.logo), alt: p.name})),
+    el('div', {},
+      el('h3', {}, p.headline),
+      el('p', {}, p.brief),
+      p.people ? el('div', {class: 'people'}, p.people.map(x => el('div', {}, el('b', {}, x.name), el('small', {}, x.role)))) : null,
+      el('div', {class: 'facts', style: {marginTop: '18px'}}, p.facts.map(f => el('span', {}, f))),
+      el('p', {style: {marginTop: '14px'}}, el('a', {class: 'more', href: p.url, target: '_blank', rel: 'noopener'}, p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/?#.*$|\/$/, '') + ' ↗'))));
+  $('partners').append(card(T.developer, 'n'), card(T.consultant, 'i'));
+  $('vbg').append(TBX.img('Drone/video_frames/frame_095s.jpg', 'The river valley north of the site, from the air'));
+  $('vh').textContent = D.vision.headline; $('vs').textContent = D.vision.statement;
+  D.vision.principles.forEach((p, i) => $('vp').append(el('div', {}, el('small', {}, String(i + 1).padStart(2, '0')), el('b', {}, p.title), el('span', {}, p.line))));
+})();
+</script>
+</body>
+</html>
